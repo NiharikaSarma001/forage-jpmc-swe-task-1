@@ -148,19 +148,23 @@ def order_book(orders, book, stock_name):
 
 def generate_csv():
     """ Generate a CSV of order history. """
-    with open('test.csv', 'wb') as f:
+    with open('test.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for t, stock, side, order, size in orders(market()):
             if t > MARKET_OPEN + SIM_LENGTH:
                 break
             writer.writerow([t, stock, side, order, size])
+            print(f"Wrote: {t}, {stock}, {side}, {order}, {size}")
+
 
 
 def read_csv():
     """ Read a CSV or order history into a list. """
-    with open('test.csv', 'rt') as f:
+    with open('test.csv', 'r') as f:
         for time, stock, side, order, size in csv.reader(f):
+            print(f"Read: {time}, {stock}, {side}, {order}, {size}")
             yield dateutil.parser.parse(time), stock, side, float(order), int(size)
+
 
 
 ################################################################################
@@ -254,14 +258,23 @@ ops = {
 class App(object):
     """ The trading game server application. """
 
+class App(object):
+    """ The trading game server application. """
+
     def __init__(self):
-        self._book_1 = dict()
-        self._book_2 = dict()
-        self._data_1 = order_book(read_csv(), self._book_1, 'ABC')
-        self._data_2 = order_book(read_csv(), self._book_2, 'DEF')
-        self._rt_start = datetime.now()
-        self._sim_start, _, _ = next(self._data_1)
-        self.read_10_first_lines()
+        try:
+            self._book_1 = dict()
+            self._book_2 = dict()
+            self._data_1 = order_book(read_csv(), self._book_1, 'ABC')
+            self._data_2 = order_book(read_csv(), self._book_2, 'DEF')
+            self._rt_start = datetime.now()
+            self._sim_start, _, _ = next(self._data_1)
+            self.read_10_first_lines()
+        except StopIteration:
+            print("No data to initialize, generating new data...")
+            generate_csv()
+            self.__init__()
+
 
     @property
     def _current_book_1(self):
